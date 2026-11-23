@@ -2,7 +2,7 @@
 
 **An independently operated text-to-speech product, from generation request to downloadable audio.**
 
-[Open the application](https://ttseleven.vercel.app) · [All projects](https://github.com/alisson539/ai-product-portfolio)
+[Open the application](https://ttseleven.vercel.app) · [All projects](https://github.com/alissonramosz/ai-product-portfolio)
 
 | Role | Stage | Focus |
 | --- | --- | --- |
@@ -47,11 +47,50 @@ An expired download should not erase the record of what happened. The product re
 
 The request path distinguishes generation, transfer and storage failures. That distinction matters when deciding whether to investigate, retry or settle credits, rather than repeating a paid generation without understanding the first attempt.
 
+## Real development problems and decisions
+
+### Expiring audio was also removing useful history
+
+**Problem:** media retention and generation history had been treated as the same lifecycle. Removing an old audio file could also remove the record a customer needed to understand a past operation.
+
+**Decision and implementation:** separate the two lifecycles. Retain the generation record, expire access to the audio in both the API and interface, and make cleanup remove the media rather than the history. Media expiry does not change a completed job into a failure or undo its settled credits.
+
+**Resulting behavior:** an expired download is shown as expired while the operation remains in history. Cleanup is not the access-control mechanism: the application also checks expiry when serving audio.
+
+### A generic audio error was not enough to decide what to retry
+
+**Problem:** a synthesis failure, an interrupted transfer and a storage failure could appear to the customer as a failed audio operation, but they need different investigation and credit decisions. Repeating synthesis just to diagnose the problem can incur another provider charge.
+
+**Decision and implementation:** correlate diagnostic information with the operation and the processing step, preserve the original cause where available, and keep customer text, audio and credentials out of the diagnostic record.
+
+**Resulting behavior:** support can investigate the recorded failure before deciding to repeat a paid operation. If the available evidence is incomplete, the report identifies that gap rather than attributing a cause it cannot establish.
+
 ## Current delivery
 
 The application is running and sold through GGMAX and DFG. Checkout inside the application is a future improvement, not part of the current delivery. Speech models are supplied by external providers; my work is the product, integration and operation around them.
 
-**Technology:** React, JavaScript, Vite, Node.js, Express, PostgreSQL and object storage.
+## Technical implementation
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Customer studio | React, JavaScript, Vite | Text input, generation state, audio playback and history |
+| Application services | Node.js, Express | Customer-facing APIs and asynchronous speech-service integration |
+| Relational data | PostgreSQL, Sequelize | Customer credits, generation records and transactional state changes |
+| Media | Object storage | Downloadable audio with a lifetime separate from the generation record |
+
+```mermaid
+flowchart LR
+    A[React studio] --> B[Application API]
+    B --> C[Relational database]
+    B --> D[Speech-generation service]
+    B --> E[Audio storage]
+```
+
+*A conceptual component view, not the deployment topology or provider configuration.*
+
+Database work includes transactional changes around credit reservation and settlement. Separating the operation record from its audio also makes retention a media concern rather than deletion of the customer's history.
+
+[Development workflow](https://github.com/alissonramosz/ai-product-portfolio#development-workflow)
 
 ## Public access
 
