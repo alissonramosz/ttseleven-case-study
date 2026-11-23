@@ -96,4 +96,10 @@ Database work includes transactional changes around credit reservation and settl
 
 [TTSELEVEN](https://ttseleven.vercel.app) opens the real application; customer features require an account.
 
+<p align="center">
+  <img src="assets/entry-point.jpg" alt="TTSELEVEN public sign-in page" width="520">
+</p>
+
+<sub>Public sign-in page, captured on 23 November 2026. Customer features require an account and are not shown.</sub>
+
 This repository contains the public case study. Application source, customer material and commercial provider details remain private.
